@@ -1,0 +1,100 @@
+config_version = 2
+
+[server]
+listen_addr = "0.0.0.0:4399"
+queue_size = 2048
+
+[storage]
+image_dir = "data/generated_images"
+image_url_prefix = "/images"
+external_base_url = "http://your-server-ip:5433"
+
+[defaults]
+reply_mode = "quote"
+log = true
+
+[defaults.ai]
+profile = "gemini_default"
+require_mention = false
+
+[[bots]]
+id = "main"
+app_id = "wx_your_app_id_here"
+token_env = "GEWE_BOT_TOKEN_MAIN"
+base_url = "https://www.geweapi.com"
+webhook_secret_env = "GEWE_WEBHOOK_SECRET_MAIN"
+tags = ["prod"]
+
+[[ai_profiles]]
+id = "gemini_default"
+provider = "gemini"
+model = "gemini-2.5-flash"
+base_url = "https://api-proxy.de/gemini"
+api_key_env = "GEMINI_API_KEY"
+system_prompt_file = "prompts/ai_system.txt"
+tool_ids = ["claude_changelog", "tool_versions", "gemini_image", "http_request"]
+
+[[tools]]
+id = "claude_changelog"
+kind = "command"
+program = "claude_changelog"
+timeout_secs = 10
+description = "获取 Claude Code 的变更日志"
+
+[[tools]]
+id = "tool_versions"
+kind = "command"
+program = "tool_versions"
+timeout_secs = 10
+description = "查询 AI 开发工具的最新版本"
+
+[[tools]]
+id = "gemini_image"
+kind = "command"
+program = "gemini_image"
+timeout_secs = 300
+pre_reply = "已收到画图请求，完成后会发送出来"
+description = "AI 图像生成"
+
+[[tools]]
+id = "http_request"
+kind = "command"
+program = "http_request"
+timeout_secs = 15
+description = "通用 HTTP 请求工具"
+
+[[rule_templates]]
+id = "ai_qa"
+name = "通用 AI 问答"
+kind = "text"
+match = { any = true }
+action = { ai_profile = "gemini_default", reply_mode = "quote", log = true }
+defaults = { require_mention = false }
+
+[[rule_templates]]
+id = "fallback_log"
+name = "兜底日志"
+kind = "any"
+action = { log = true }
+
+[[rule_instances]]
+id = "ai_qa_private"
+template = "ai_qa"
+channel = "private"
+from = { wxid = "wxid_example_user" }
+priority = 100
+overrides = { require_mention = false }
+
+[[rule_instances]]
+id = "ai_qa_group"
+template = "ai_qa"
+channel = "group"
+chat = { chatroom_id = "123456789@chatroom" }
+priority = 110
+overrides = { require_mention = true }
+
+[[rule_instances]]
+id = "fallback_log_all"
+template = "fallback_log"
+channel = "both"
+priority = 1000

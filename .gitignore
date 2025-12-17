@@ -1,0 +1,12 @@
+.env
+.env.local
+.env.*.local
+target
+logs
+data
+
+.DS_Store
+
+# 敏感配置文件（包含真实凭据）
+config/bot-app.toml
+config/bot-app.v2.toml

@@ -1,0 +1,16 @@
+[package]
+name = "gewe-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Core types and definitions for gewe WeChat SDK"
+keywords = ["wechat", "gewe", "sdk", "core"]
+categories = ["api-bindings"]
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
