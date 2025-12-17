@@ -2,15 +2,13 @@
 
 基于 Gewe API 的微信自动化 Rust 生态系统
 
-[中文](#中文) | [English](#english)
+[中文](#介绍) | [English](#introduction)
 
 ---
 
-# 中文
+# 介绍
 
-## 介绍
-
-**gewe-rs** 是一个完整的微信自动化生态系统，基于 [Gewe](https://gewe.apifox.cn/) API 构建。提供从底层 SDK 到上层应用的全套解决方案。
+**gewe-rs** 是一个完整的微信自动化生态系统，基于 [Gewe](https://www.geweapi.com/) API 构建。提供从底层 SDK 到上层应用的全套解决方案。
 
 ## 组件
 
@@ -144,11 +142,9 @@ async fn main() -> anyhow::Result<()> {
 
 ---
 
-# English
+# Introduction
 
-## Introduction
-
-**gewe-rs** is a complete WeChat automation ecosystem built on the [Gewe](https://gewe.apifox.cn/) API. It provides a full suite of solutions from low-level SDK to high-level applications.
+**gewe-rs** is a complete WeChat automation ecosystem built on the [Gewe](https://www.geweapi.com/) API. It provides a full suite of solutions from low-level SDK to high-level applications.
 
 ## Components
 
