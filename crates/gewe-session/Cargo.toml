@@ -8,14 +8,13 @@ repository.workspace = true
 description = "Session management for gewe WeChat SDK"
 keywords = ["wechat", "gewe", "session", "storage"]
 categories = ["api-bindings"]
-publish = false
 
 [dependencies]
 async-trait = { workspace = true }
 serde = { workspace = true }
 tracing = { workspace = true }
 tokio = { workspace = true }
-gewe-core = { path = "../gewe-core" }
+gewe-core = { path = "../gewe-core", version = "0.1" }
 serde_json = { workspace = true }
 sqlx = { workspace = true, optional = true }
 redis = { workspace = true, optional = true }

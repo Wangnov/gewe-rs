@@ -8,7 +8,6 @@ repository.workspace = true
 description = "Webhook handler for gewe WeChat SDK"
 keywords = ["wechat", "gewe", "webhook"]
 categories = ["api-bindings"]
-publish = false
 
 [dependencies]
 axum = { workspace = true }
@@ -16,8 +15,8 @@ tokio = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tracing = { workspace = true }
-gewe-core = { path = "../gewe-core" }
-gewe-session = { path = "../gewe-session" }
+gewe-core = { path = "../gewe-core", version = "0.1" }
+gewe-session = { path = "../gewe-session", version = "0.1" }
 hmac = { workspace = true }
 sha2 = { workspace = true }
 hex = { workspace = true }
