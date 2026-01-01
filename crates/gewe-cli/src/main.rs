@@ -295,7 +295,7 @@ enum Commands {
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
-    let filter = get_log_filter(cli.verbose);
+    let filter = get_log_filter_for_command(&cli);
     tracing_subscriber::fmt().with_env_filter(filter).init();
     let config_path = resolve_config_path(cli.config.as_deref())?;
     let mut cfg = load_config(&config_path)?;
@@ -545,6 +545,17 @@ fn get_log_filter(verbose: u8) -> &'static str {
         1 => "debug",
         _ => "trace",
     }
+}
+
+/// 根据命令类型决定日志级别
+/// wait-reply 命令在 text 输出模式下自动静默（只显示 warn/error）
+fn get_log_filter_for_command(cli: &Cli) -> &'static str {
+    if let Commands::WaitReply(ref args) = cli.command {
+        if args.output_format == wait_reply::OutputFormat::Text {
+            return "warn";
+        }
+    }
+    get_log_filter(cli.verbose)
 }
 
 #[cfg(test)]

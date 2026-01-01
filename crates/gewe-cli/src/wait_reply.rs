@@ -403,7 +403,7 @@ pub async fn handle_wait_reply(
         Err(_) => {
             // 端口被占用，尝试连接广播端口
             if can_connect_broadcast(&bc_addr).await {
-                run_as_subscriber(&bc_addr, args, state).await
+                run_as_subscriber(&bc_addr, args, state, &token, &base_url, &app_id, messages).await
             } else {
                 error!(listen = %args.listen, "端口被其他进程占用");
                 std::process::exit(ExitStatus::WebhookFailed as i32);
@@ -603,8 +603,30 @@ async fn run_as_subscriber(
     bc_addr: &str,
     args: WaitReplyArgs,
     state: Arc<Mutex<WaitReplyState>>,
+    token: &str,
+    base_url: &str,
+    app_id: &str,
+    messages: Vec<WaitReplyMessage>,
 ) -> Result<()> {
     info!(addr = bc_addr, "作为订阅者启动");
+
+    // 发送消息（与主进程共用同一个逻辑）
+    if !messages.is_empty() {
+        let client = GeweHttpClient::new(token.to_string(), base_url.to_string())?;
+        let to = if args.group_wxid.is_some() {
+            args.group_wxid.as_ref().unwrap()
+        } else {
+            &args.to_wxid
+        };
+
+        for msg in &messages {
+            if let Err(e) = send_message(&client, app_id, to, msg).await {
+                error!(error = ?e, "发送消息失败");
+                std::process::exit(ExitStatus::SendFailed as i32);
+            }
+        }
+        info!(count = messages.len(), "消息发送完成");
+    }
 
     let timeout_duration = args.timeout.map(Duration::from_secs);
     let start = std::time::Instant::now();
