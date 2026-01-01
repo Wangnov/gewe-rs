@@ -9,3 +9,9 @@ data
 
 # 敏感配置目录（包含真实凭据和 prompts）
 config/
+
+# AI 助手配置目录
+.claude/
+.codex/
+.gemini/
+.agents/

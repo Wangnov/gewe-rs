@@ -1,7 +1,7 @@
 # gewe-rs Makefile
 # 使用: make <target>
 
-.PHONY: help dev build build-release build-frontend test check clean publish publish-dry migrate fmt setup
+.PHONY: help dev build build-release build-frontend test check clean publish publish-dry migrate fmt setup version-patch version-minor version-major
 
 # 默认目标：显示帮助
 help:
@@ -14,6 +14,9 @@ help:
 	@echo "  make check          - 检查代码 (cargo check + clippy)"
 	@echo "  make fmt            - 格式化代码"
 	@echo "  make clean          - 清理构建产物"
+	@echo "  make version-patch  - 升级补丁版本 (0.1.0 -> 0.1.1)"
+	@echo "  make version-minor  - 升级次版本 (0.1.0 -> 0.2.0)"
+	@echo "  make version-major  - 升级主版本 (0.1.0 -> 1.0.0)"
 	@echo "  make publish-dry    - 测试发布 (dry-run)"
 	@echo "  make publish        - 发布到 crates.io"
 	@echo "  make migrate        - 运行数据库迁移"
@@ -63,9 +66,19 @@ migrate:
 publish-dry:
 	cargo ws publish --dry-run
 
-# 发布到 crates.io (按依赖顺序，自动处理)
+# 版本升级
+version-patch:
+	cargo ws version patch --yes
+
+version-minor:
+	cargo ws version minor --yes
+
+version-major:
+	cargo ws version major --yes
+
+# 发布到 crates.io (使用当前版本)
 publish:
-	cargo ws publish
+	cargo ws publish --from-git --yes
 
 # 安装开发依赖
 setup:
