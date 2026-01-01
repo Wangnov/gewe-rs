@@ -51,8 +51,3 @@ clap = { version = "4.5", features = ["derive"] }
 inherits = "release"
 lto = "thin"
 
-# Config for 'dist'
-[workspace.metadata.dist]
-# Allow modified CI files
-allow-dirty = ["ci"]
-
