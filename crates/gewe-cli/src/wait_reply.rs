@@ -17,7 +17,7 @@ use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::net::{TcpListener, UnixListener, UnixStream};
+use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::{broadcast, mpsc, Mutex};
 use tokio::time;
 use tracing::{debug, error, info, warn};
@@ -330,9 +330,14 @@ fn extract_group_sender_and_content(content: &str) -> Option<(String, String)> {
     None
 }
 
-/// 获取广播 socket 路径
-fn socket_path(port: u16) -> String {
-    format!("/tmp/gewe-wait-reply-{}.sock", port)
+/// 计算广播端口（webhook 端口 + 10000，用于多进程 IPC）
+fn broadcast_port(webhook_port: u16) -> u16 {
+    webhook_port.saturating_add(10000)
+}
+
+/// 获取广播地址
+fn broadcast_addr(port: u16) -> String {
+    format!("127.0.0.1:{}", broadcast_port(port))
 }
 
 /// 从监听地址解析端口
@@ -385,22 +390,20 @@ pub async fn handle_wait_reply(
     )?));
 
     let port = parse_port(&args.listen)?;
-    let sock_path = socket_path(port);
+    let bc_addr = broadcast_addr(port);
 
     // 尝试绑定端口
     match try_bind_port(&args.listen) {
         Ok(listener) => {
-            // 清理残留的 socket 文件
-            cleanup_stale_socket(&sock_path).await?;
             run_as_primary(
-                listener, &sock_path, args, state, &token, &base_url, &app_id, messages, config,
+                listener, &bc_addr, args, state, &token, &base_url, &app_id, messages, config,
             )
             .await
         }
         Err(_) => {
-            // 端口被占用，检查是否有广播 socket
-            if tokio::fs::metadata(&sock_path).await.is_ok() {
-                run_as_subscriber(&sock_path, args, state).await
+            // 端口被占用，尝试连接广播端口
+            if can_connect_broadcast(&bc_addr).await {
+                run_as_subscriber(&bc_addr, args, state).await
             } else {
                 error!(listen = %args.listen, "端口被其他进程占用");
                 std::process::exit(ExitStatus::WebhookFailed as i32);
@@ -414,30 +417,16 @@ fn try_bind_port(listen: &str) -> Result<StdTcpListener> {
     StdTcpListener::bind(listen).map_err(|e| anyhow!("绑定端口失败: {}", e))
 }
 
-/// 清理残留的 socket 文件
-async fn cleanup_stale_socket(path: &str) -> Result<()> {
-    if tokio::fs::metadata(path).await.is_ok() {
-        // 尝试连接，如果失败说明是残留文件
-        match UnixStream::connect(path).await {
-            Ok(_) => {
-                // socket 仍在使用
-                return Err(anyhow!("socket 文件已被其他进程使用"));
-            }
-            Err(_) => {
-                // 残留文件，删除
-                tokio::fs::remove_file(path).await?;
-                debug!(path, "已清理残留 socket 文件");
-            }
-        }
-    }
-    Ok(())
+/// 检查是否可以连接到广播端口
+async fn can_connect_broadcast(addr: &str) -> bool {
+    TcpStream::connect(addr).await.is_ok()
 }
 
 /// 作为主进程运行
 #[allow(clippy::too_many_arguments)]
 async fn run_as_primary(
     std_listener: StdTcpListener,
-    sock_path: &str,
+    bc_addr: &str,
     args: WaitReplyArgs,
     state: Arc<Mutex<WaitReplyState>>,
     token: &str,
@@ -452,10 +441,19 @@ async fn run_as_primary(
     std_listener.set_nonblocking(true)?;
     let listener = TcpListener::from_std(std_listener)?;
 
-    // 创建广播 socket
-    let _ = tokio::fs::remove_file(sock_path).await;
-    let unix_listener = UnixListener::bind(sock_path)?;
-    info!(path = sock_path, "广播 socket 已创建");
+    // 创建广播 TCP 服务器
+    let bc_listener = match TcpListener::bind(bc_addr).await {
+        Ok(l) => l,
+        Err(e) => {
+            warn!(addr = bc_addr, error = ?e, "无法绑定广播端口，多进程共享将不可用");
+            // 继续运行，但不支持多进程共享
+            return run_as_primary_without_broadcast(
+                listener, args, state, token, base_url, app_id, messages, config,
+            )
+            .await;
+        }
+    };
+    info!(addr = bc_addr, "广播服务已启动");
 
     // 创建广播通道
     let (broadcast_tx, _) = broadcast::channel::<BroadcastMessage>(1024);
@@ -465,8 +463,9 @@ async fn run_as_primary(
     let broadcast_tx_clone = broadcast_tx.clone();
     tokio::spawn(async move {
         loop {
-            match unix_listener.accept().await {
-                Ok((stream, _)) => {
+            match bc_listener.accept().await {
+                Ok((stream, addr)) => {
+                    debug!(addr = ?addr, "订阅者已连接");
                     let rx = broadcast_tx_clone.subscribe();
                     tokio::spawn(handle_subscriber_connection(stream, rx));
                 }
@@ -526,9 +525,68 @@ async fn run_as_primary(
         reason: "primary_exit".to_string(),
     });
 
-    // 清理 socket 文件
-    let sock_path_owned = sock_path.to_string();
-    let _ = tokio::fs::remove_file(&sock_path_owned).await;
+    // 停止服务器
+    server.abort();
+
+    // 输出结果
+    let guard = state.lock().await;
+    output_result(&args.output_format, &guard.received);
+
+    std::process::exit(exit_status as i32);
+}
+
+/// 作为主进程运行（不支持广播）
+#[allow(clippy::too_many_arguments)]
+async fn run_as_primary_without_broadcast(
+    listener: TcpListener,
+    args: WaitReplyArgs,
+    state: Arc<Mutex<WaitReplyState>>,
+    token: &str,
+    base_url: &str,
+    app_id: &str,
+    messages: Vec<WaitReplyMessage>,
+    config: &CliConfig,
+) -> Result<()> {
+    // 创建 webhook router
+    let (router, mut rx, store) =
+        router_with_channel_and_state::<InMemorySessionStore>(WebhookBuilderOptions {
+            queue_size: 1024,
+        });
+
+    // 注册机器人
+    register_bot(&store, app_id, token, config).await?;
+
+    // 启动 HTTP 服务器
+    let server = tokio::spawn(async move {
+        if let Err(e) = axum::serve(listener, router).await {
+            error!(error = ?e, "HTTP 服务器错误");
+        }
+    });
+
+    // 发送消息
+    if !messages.is_empty() {
+        let client = GeweHttpClient::new(token.to_string(), base_url.to_string())?;
+        let to = if args.group_wxid.is_some() {
+            args.group_wxid.as_ref().unwrap()
+        } else {
+            &args.to_wxid
+        };
+
+        for msg in &messages {
+            if let Err(e) = send_message(&client, app_id, to, msg).await {
+                error!(error = ?e, "发送消息失败");
+                std::process::exit(ExitStatus::SendFailed as i32);
+            }
+        }
+        info!(count = messages.len(), "消息发送完成");
+    }
+
+    // 等待回复（无广播）
+    let timeout_duration = args.timeout.map(Duration::from_secs);
+    let (broadcast_tx, _) = broadcast::channel::<BroadcastMessage>(1);
+    let broadcast_tx = Arc::new(broadcast_tx);
+
+    let exit_status = wait_for_reply(&mut rx, state.clone(), broadcast_tx, timeout_duration).await;
 
     // 停止服务器
     server.abort();
@@ -542,19 +600,19 @@ async fn run_as_primary(
 
 /// 作为订阅者运行
 async fn run_as_subscriber(
-    sock_path: &str,
+    bc_addr: &str,
     args: WaitReplyArgs,
     state: Arc<Mutex<WaitReplyState>>,
 ) -> Result<()> {
-    info!(path = sock_path, "作为订阅者启动");
+    info!(addr = bc_addr, "作为订阅者启动");
 
     let timeout_duration = args.timeout.map(Duration::from_secs);
     let start = std::time::Instant::now();
-    let sock_path_owned = sock_path.to_string();
+    let bc_addr_owned = bc_addr.to_string();
 
     loop {
         // 连接到主进程
-        let stream = match UnixStream::connect(&sock_path_owned).await {
+        let stream = match TcpStream::connect(&bc_addr_owned).await {
             Ok(s) => s,
             Err(e) => {
                 warn!(error = ?e, "连接主进程失败");
@@ -639,7 +697,7 @@ async fn run_as_subscriber(
 
 /// 处理订阅者连接
 async fn handle_subscriber_connection(
-    stream: UnixStream,
+    stream: TcpStream,
     mut rx: broadcast::Receiver<BroadcastMessage>,
 ) {
     let (_, mut writer) = stream.into_split();
@@ -862,9 +920,16 @@ mod tests {
     }
 
     #[test]
-    fn test_socket_path() {
-        assert_eq!(socket_path(4399), "/tmp/gewe-wait-reply-4399.sock");
-        assert_eq!(socket_path(8080), "/tmp/gewe-wait-reply-8080.sock");
+    fn test_broadcast_port() {
+        assert_eq!(broadcast_port(4399), 14399);
+        assert_eq!(broadcast_port(8080), 18080);
+        assert_eq!(broadcast_port(65535), 65535); // saturating_add
+    }
+
+    #[test]
+    fn test_broadcast_addr() {
+        assert_eq!(broadcast_addr(4399), "127.0.0.1:14399");
+        assert_eq!(broadcast_addr(8080), "127.0.0.1:18080");
     }
 
     #[test]
