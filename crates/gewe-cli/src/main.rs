@@ -8,6 +8,7 @@ mod moments;
 mod personal;
 mod tag;
 mod video_account;
+mod wait_reply;
 mod webhook;
 
 use anyhow::Result;
@@ -287,6 +288,8 @@ enum Commands {
     Config(config::ConfigArgs),
     /// 启动 webhook 服务器，接收并处理消息事件
     ServeWebhook(webhook::ServeWebhookArgs),
+    /// 发送消息后等待特定用户回复
+    WaitReply(wait_reply::WaitReplyArgs),
 }
 
 #[tokio::main]
@@ -528,6 +531,9 @@ async fn main() -> Result<()> {
         Commands::Config(args) => config::handle_config(args, &config_path, &mut cfg)?,
         Commands::ServeWebhook(args) => {
             webhook::handle_serve_webhook(args, &config_path, &cfg).await?
+        }
+        Commands::WaitReply(args) => {
+            wait_reply::handle_wait_reply(args, &config_path, &cfg).await?;
         }
     }
     Ok(())
