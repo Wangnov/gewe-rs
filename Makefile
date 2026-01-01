@@ -61,25 +61,14 @@ migrate:
 
 # 发布测试 (dry-run)
 publish-dry:
-	cargo publish -p gewe-core --dry-run
-	cargo publish -p gewe-http --dry-run
-	cargo publish -p gewe-cli --dry-run
+	cargo ws publish --dry-run
 
-# 发布到 crates.io (按依赖顺序)
+# 发布到 crates.io (按依赖顺序，自动处理)
 publish:
-	@echo "发布 gewe-core..."
-	cargo publish -p gewe-core
-	@echo "等待 crates.io 索引更新 (30秒)..."
-	sleep 30
-	@echo "发布 gewe-http..."
-	cargo publish -p gewe-http
-	@echo "等待 crates.io 索引更新 (30秒)..."
-	sleep 30
-	@echo "发布 gewe-cli..."
-	cargo publish -p gewe-cli
-	@echo "发布完成!"
+	cargo ws publish
 
 # 安装开发依赖
 setup:
+	cargo binstall cargo-workspaces -y || cargo install cargo-workspaces
 	cargo install sqlx-cli --no-default-features --features sqlite
 	@echo "前端依赖请在 frontend/ 目录创建后安装"
