@@ -895,7 +895,7 @@ dependencies = [
 
 [[package]]
 name = "gewe-bot-app"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -929,7 +929,7 @@ dependencies = [
 
 [[package]]
 name = "gewe-cli"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -956,7 +956,7 @@ dependencies = [
 
 [[package]]
 name = "gewe-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -966,14 +966,14 @@ dependencies = [
 
 [[package]]
 name = "gewe-grpc"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "gewe-core",
 ]
 
 [[package]]
 name = "gewe-http"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "async-trait",
  "gewe-core",
@@ -987,7 +987,7 @@ dependencies = [
 
 [[package]]
 name = "gewe-session"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "async-trait",
  "gewe-core",
@@ -1001,21 +1001,21 @@ dependencies = [
 
 [[package]]
 name = "gewe-tauri"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "gewe-core",
 ]
 
 [[package]]
 name = "gewe-web"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "gewe-core",
 ]
 
 [[package]]
 name = "gewe-webhook"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "axum",
  "gewe-core",
