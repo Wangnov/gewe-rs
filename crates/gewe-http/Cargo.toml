@@ -1,0 +1,20 @@
+[package]
+name = "gewe-http"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "HTTP client for gewe WeChat API"
+keywords = ["wechat", "gewe", "http", "api"]
+categories = ["api-bindings"]
+
+[dependencies]
+gewe-core = { path = "../gewe-core", version = "0.1" }
+reqwest = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+thiserror = { workspace = true }
+async-trait = { workspace = true }

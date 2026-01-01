@@ -1,0 +1,26 @@
+[package]
+name = "gewe-webhook"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Webhook handler for gewe WeChat SDK"
+keywords = ["wechat", "gewe", "webhook"]
+categories = ["api-bindings"]
+publish = false
+
+[dependencies]
+axum = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+gewe-core = { path = "../gewe-core" }
+gewe-session = { path = "../gewe-session" }
+hmac = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+
+[dev-dependencies]
+tower = "0.5"

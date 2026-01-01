@@ -1,0 +1,43 @@
+[package]
+name = "gewe-bot-app"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "WeChat bot framework with AI support"
+keywords = ["wechat", "gewe", "bot", "ai"]
+categories = ["web-programming"]
+publish = false
+
+[dependencies]
+anyhow = { workspace = true }
+axum = { workspace = true }
+gewe-core = { path = "../gewe-core" }
+gewe-http = { path = "../gewe-http" }
+gewe-session = { path = "../gewe-session" }
+gewe-webhook = { path = "../gewe-webhook" }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+toml = { workspace = true }
+tower = { workspace = true, features = ["make"] }
+reqwest = { workspace = true }
+regex = "1"
+rig-core = "0.24"
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+tracing-appender = { workspace = true }
+tower-http = { workspace = true }
+base64 = "0.22"
+uuid = { version = "1.10", features = ["v4"] }
+rand = "0.8"
+sha2 = { workspace = true }
+hex = { workspace = true }
+chrono = { version = "0.4", features = ["serde"] }
+axum-htmx = "0.6"
+sqlx = { workspace = true }
+async-trait = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"

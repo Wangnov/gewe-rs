@@ -1,0 +1,13 @@
+token = "example-token"
+base_url = "http://api.geweapi.com"
+app_id = ""
+region_id = "320000"
+device_type = "ipad"
+
+[[bots]]
+app_id = "bot1"
+wxid = "wxid_bot1"
+
+[[bots]]
+app_id = "bot2"
+wxid = ""

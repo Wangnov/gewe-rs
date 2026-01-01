@@ -1,0 +1,11 @@
+.env
+.env.local
+.env.*.local
+target
+logs
+data
+
+.DS_Store
+
+# 敏感配置目录（包含真实凭据和 prompts）
+config/

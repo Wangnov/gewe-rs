@@ -1,0 +1,14 @@
+[package]
+name = "gewe-tauri"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Desktop application for gewe WeChat management panel (Tauri)"
+keywords = ["wechat", "gewe", "tauri", "desktop"]
+categories = ["gui"]
+publish = false
+
+[dependencies]
+gewe-core = { path = "../gewe-core" }
