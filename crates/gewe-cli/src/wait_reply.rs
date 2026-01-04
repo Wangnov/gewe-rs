@@ -179,6 +179,8 @@ pub enum BroadcastMessage {
     Message { data: ReceivedReply },
     #[serde(rename = "shutdown")]
     Shutdown { reason: String },
+    #[serde(rename = "heartbeat")]
+    Heartbeat { timestamp: u64 },
 }
 
 /// wait-reply 运行时状态
@@ -476,6 +478,22 @@ async fn run_as_primary(
         }
     });
 
+    // 启动心跳定时器（每 30 秒发送一次心跳）
+    let broadcast_tx_heartbeat = broadcast_tx.clone();
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_secs(30));
+        loop {
+            interval.tick().await;
+            let timestamp = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs();
+            if broadcast_tx_heartbeat.send(BroadcastMessage::Heartbeat { timestamp }).is_err() {
+                debug!("心跳发送失败，可能没有订阅者");
+            }
+        }
+    });
+
     // 创建 webhook router
     let (router, mut rx, store) =
         router_with_channel_and_state::<InMemorySessionStore>(WebhookBuilderOptions {
@@ -669,9 +687,10 @@ async fn run_as_subscriber(
             }
 
             // 设置读取超时
+            // 如果设置了整体超时，使用剩余时间；否则使用 90 秒（心跳间隔 30 秒 × 3）
             let read_timeout = timeout_duration
                 .map(|t| t.saturating_sub(start.elapsed()))
-                .unwrap_or(Duration::from_secs(60));
+                .unwrap_or(Duration::from_secs(90));
 
             line.clear();
             match time::timeout(read_timeout, reader.read_line(&mut line)).await {
@@ -694,6 +713,10 @@ async fn run_as_subscriber(
                             BroadcastMessage::Shutdown { .. } => {
                                 warn!("收到主进程 shutdown 消息");
                                 break;
+                            }
+                            BroadcastMessage::Heartbeat { timestamp } => {
+                                debug!(timestamp = timestamp, "收到心跳");
+                                // 心跳消息，继续等待
                             }
                         }
                     }
