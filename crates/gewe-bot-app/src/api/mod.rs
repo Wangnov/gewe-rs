@@ -32,8 +32,8 @@ pub fn api_router(state: ApiState) -> Router {
         .route("/config/import", post(config::import_config))
         // Prompts 相关
         .route("/prompts", get(prompts::list_prompts))
-        .route("/prompts/:name", get(prompts::get_prompt))
-        .route("/prompts/:name", put(prompts::put_prompt))
+        .route("/prompts/{name}", get(prompts::get_prompt))
+        .route("/prompts/{name}", put(prompts::put_prompt))
         .with_state(state)
 }
 
@@ -45,47 +45,47 @@ pub fn pages_router(state: ApiState) -> Router {
         // Bots
         .route("/bots", get(pages::bots_list))
         .route("/bots/new", get(pages::bot_new_form))
-        .route("/bots/edit/:id", get(pages::bot_edit_form))
+        .route("/bots/edit/{id}", get(pages::bot_edit_form))
         .route("/bots/save", post(pages::bot_save))
-        .route("/bots/delete/:id", post(pages::bot_delete))
+        .route("/bots/delete/{id}", post(pages::bot_delete))
         // AI Profiles
         .route("/ai-profiles", get(pages::ai_profiles_list))
         .route("/ai-profiles/new", get(pages::ai_profile_new_form))
-        .route("/ai-profiles/edit/:id", get(pages::ai_profile_edit_form))
+        .route("/ai-profiles/edit/{id}", get(pages::ai_profile_edit_form))
         .route("/ai-profiles/save", post(pages::ai_profile_save))
-        .route("/ai-profiles/delete/:id", post(pages::ai_profile_delete))
+        .route("/ai-profiles/delete/{id}", post(pages::ai_profile_delete))
         // Tools
         .route("/tools", get(pages::tools_list))
         .route("/tools/new", get(pages::tool_new_form))
-        .route("/tools/edit/:id", get(pages::tool_edit_form))
+        .route("/tools/edit/{id}", get(pages::tool_edit_form))
         .route("/tools/save", post(pages::tool_save))
-        .route("/tools/delete/:id", post(pages::tool_delete))
+        .route("/tools/delete/{id}", post(pages::tool_delete))
         // Rules
         .route("/rules", get(pages::rules_page))
         .route("/rule-templates/new", get(pages::rule_template_new_form))
         .route(
-            "/rule-templates/edit/:id",
+            "/rule-templates/edit/{id}",
             get(pages::rule_template_edit_form),
         )
         .route("/rule-templates/save", post(pages::rule_template_save))
         .route(
-            "/rule-templates/delete/:id",
+            "/rule-templates/delete/{id}",
             post(pages::rule_template_delete),
         )
         .route("/rule-instances/new", get(pages::rule_instance_new_form))
         .route(
-            "/rule-instances/edit/:id",
+            "/rule-instances/edit/{id}",
             get(pages::rule_instance_edit_form),
         )
         .route("/rule-instances/save", post(pages::rule_instance_save))
         .route(
-            "/rule-instances/delete/:id",
+            "/rule-instances/delete/{id}",
             post(pages::rule_instance_delete),
         )
         // Prompts
         .route("/prompts", get(pages::prompts_page))
         .route("/prompts/new", get(pages::prompt_new))
-        .route("/prompts/edit/:name", get(pages::prompt_edit))
+        .route("/prompts/edit/{name}", get(pages::prompt_edit))
         .route("/prompts/create", post(pages::prompt_create))
         // Simulator
         .route("/simulator", get(pages::simulator_page))

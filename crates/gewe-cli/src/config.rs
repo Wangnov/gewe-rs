@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Result};
 use clap::Args;
-use directories::ProjectDirs;
+use directories::{BaseDirs, ProjectDirs};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::Write;
@@ -61,8 +61,8 @@ pub fn resolve_config_path(custom: Option<&Path>) -> Result<PathBuf> {
         fs::create_dir_all(dir)?;
         return Ok(dir.join("config.toml"));
     }
-    let home = dirs::home_dir().ok_or_else(|| anyhow!("failed to resolve home directory"))?;
-    let dir = home.join(".config/gewe");
+    let base = BaseDirs::new().ok_or_else(|| anyhow!("failed to resolve home directory"))?;
+    let dir = base.home_dir().join(".config/gewe");
     fs::create_dir_all(&dir)?;
     Ok(dir.join("config.toml"))
 }

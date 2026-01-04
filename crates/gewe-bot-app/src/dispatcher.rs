@@ -101,7 +101,7 @@ impl RateLimiter {
                 guard.push_back(now);
                 drop(guard);
                 if self.jitter_ms > 0 {
-                    let jitter = rand::thread_rng().gen_range(0..=self.jitter_ms);
+                    let jitter = rand::rng().random_range(0..=self.jitter_ms);
                     if jitter > 0 {
                         time::sleep(Duration::from_millis(jitter)).await;
                     }
@@ -237,7 +237,7 @@ impl LlmClient {
 
         match provider {
             "anthropic" | "claude" => {
-                let mut builder = anthropic::Client::builder(&api_key);
+                let mut builder = anthropic::Client::builder().api_key(&api_key);
                 if let Some(ref url) = action.base_url {
                     builder = builder.base_url(url.trim_end_matches('/'));
                 }
@@ -247,7 +247,7 @@ impl LlmClient {
                 Ok(Self::Anthropic(client.completion_model(&action.model)))
             }
             "gemini" | "google" => {
-                let mut builder = gemini::Client::builder(&api_key);
+                let mut builder = gemini::Client::builder().api_key(&api_key);
                 if let Some(ref url) = action.base_url {
                     builder = builder.base_url(url.trim_end_matches('/'));
                 }
@@ -264,7 +264,11 @@ impl LlmClient {
                     .unwrap_or("https://api.openai.com/v1")
                     .trim_end_matches('/');
 
-                let client = openai::Client::builder(&api_key).base_url(base_url).build();
+                let client = openai::Client::builder()
+                    .api_key(&api_key)
+                    .base_url(base_url)
+                    .build()
+                    .map_err(|e| anyhow!("创建 OpenAI 客户端失败: {}", e))?;
 
                 Ok(Self::OpenAi(client.completion_model(&action.model)))
             }

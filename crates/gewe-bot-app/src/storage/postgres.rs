@@ -23,13 +23,20 @@ impl PostgresStorage {
         Ok(Self { pool })
     }
 
-    /// 运行迁移
+    /// 运行迁移（需启用 db-migrate 特性）
+    #[cfg(feature = "db-migrate")]
     pub async fn run_migrations(&self) -> Result<(), String> {
         sqlx::migrate!("./migrations")
             .run(&self.pool)
             .await
             .map_err(|e| format!("运行迁移失败: {}", e))?;
         Ok(())
+    }
+
+    /// 运行迁移（需启用 db-migrate 特性）
+    #[cfg(not(feature = "db-migrate"))]
+    pub async fn run_migrations(&self) -> Result<(), String> {
+        Err("运行迁移需要启用 feature `db-migrate`，或改用 sqlx-cli 执行迁移".to_string())
     }
 
     /// 计算 ETag
